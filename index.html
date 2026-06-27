@@ -196,7 +196,7 @@ const log=document.getElementById('log');
 const stage=document.getElementById('stage');
 const hint=document.getElementById('hint');
 const branches=document.getElementById('branches');
-let i=0, done=false;
+let i=0, done=false, branchChosen=false, branchQueue=[];
 
 function narr(text){
   const d=document.createElement('div'); d.className='narr';
@@ -230,7 +230,7 @@ function rulesBox(text){
   log.appendChild(d); log.scrollTop=log.scrollHeight;
 }
 function advance(){
-  if(done) return;
+  if(done || branchChosen) return;
   if(i>=STORY.length){ showBranches(); return; }
   const step=STORY[i]; i++;
   renderStep(step);
@@ -242,6 +242,8 @@ const BRANCH_META=[
 ];
 function showBranches(){
   done=true; hint.style.display='none';
+  if(branches.dataset.built){ branches.style.display='flex'; return; }  // 중복 생성 방지
+  branches.dataset.built='1';
   BRANCH_META.forEach(m=>{
     const btn=document.createElement('button');
     const lab=document.createElement('span'); lab.textContent=m.label;
@@ -254,15 +256,12 @@ function showBranches(){
   branches.scrollIntoView({behavior:'smooth'});
 }
 function pickBranch(key){
+  branchChosen=true;                 // 한 번 고르면 분기 메뉴 다시 안 뜸
   branches.style.display='none';
-  done=false; i=STORY.length; // 분기 내용은 별도로 재생
-  const lines=BRANCH[key]||[];
-  // 선택한 분기 라인들을 차례로 표시 (클릭으로 진행)
-  branchQueue = lines.slice();
-  hint.style.display='';
+  branchQueue = (BRANCH[key]||[]).slice();
+  hint.style.display = branchQueue.length ? '' : 'none';
   playBranch();
 }
-let branchQueue=[];
 function playBranch(){
   if(!branchQueue.length){ hint.style.display='none'; return; }
   const step=branchQueue.shift();
@@ -272,7 +271,7 @@ function playBranch(){
 
 stage.addEventListener('click',e=>{
   if(e.target.closest('button')) return;
-  if(branchQueue.length){ playBranch(); return; }
+  if(branchChosen){ if(branchQueue.length) playBranch(); return; }  // 분기 재생 중/후엔 메뉴 재호출 안 함
   advance();
 });
 advance();
