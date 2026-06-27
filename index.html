@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="robots" content="noindex, nofollow">
+<title>논리 루트 — 결착</title>
+<style>
+  :root{
+    --bg:#0c0e13; --panel:#151823; --line:#2a3040; --ink:#e9ecf2; --muted:#8b93a6;
+    --mina:#5fb4ff; --toki:#ff6b6b; --tsuki:#7ee0c0; --gold:#ffd54a;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;height:100%}
+  body{
+    background:radial-gradient(130% 100% at 50% 0%,#171b27 0%,var(--bg) 60%);
+    color:var(--ink);
+    font-family:"Malgun Gothic","Apple SD Gothic Neo",system-ui,sans-serif;
+    display:flex;flex-direction:column;align-items:center;height:100%;overflow:hidden;
+  }
+  #top{width:100%;max-width:720px;padding:12px 18px 8px;text-align:center}
+  #top h1{margin:0;font-size:16px;letter-spacing:3px;color:#dfe3ea;font-weight:700}
+
+  #stage{width:100%;max-width:720px;flex:1;display:flex;flex-direction:column;
+         min-height:0;padding:0 14px 10px;cursor:pointer}
+  #log{flex:1;overflow-y:auto;padding:10px 4px 6px;display:flex;flex-direction:column;gap:12px;
+       scroll-behavior:smooth}
+  .row{display:flex}
+  .row.L{justify-content:flex-start}
+  .row.R{justify-content:flex-end}
+  .row.C{justify-content:center}
+  @keyframes rise{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+
+  .narr{align-self:stretch;padding:4px 6px 4px 16px;border-left:3px solid rgba(139,147,166,.5);
+        color:#c6cdda;font-style:italic;line-height:1.75;font-size:15px;white-space:pre-wrap;
+        animation:rise .22s ease}
+
+  .bubble{position:relative;max-width:82%;background:var(--panel);border:1px solid var(--line);
+          border-left:4px solid var(--line);border-radius:12px;padding:10px 14px;
+          animation:rise .22s ease}
+  .row.R .bubble{border-left:1px solid var(--line);border-right:4px solid var(--line)}
+  .bubble .name{font-size:12px;font-weight:800;margin-bottom:3px}
+  .bubble .txt{font-size:15px;line-height:1.65;color:#eef1f6;white-space:pre-wrap}
+
+  .rules{align-self:stretch;background:#141a26;border:1px solid #2e3a50;border-radius:12px;
+         padding:14px 18px;line-height:1.85;font-size:13.5px;color:#cfd6e4;white-space:pre-wrap;
+         animation:rise .22s ease}
+  .rules .rtag{display:block;font-size:12px;font-weight:800;color:var(--gold);
+         margin-bottom:8px;letter-spacing:1px}
+
+  #hint{height:22px;text-align:center;color:var(--muted);font-size:12px;
+        padding-top:2px;user-select:none;animation:pulse 1.4s ease-in-out infinite}
+  @keyframes pulse{0%,100%{opacity:.4}50%{opacity:.9}}
+
+  #branches{display:none;flex-direction:column;gap:8px;align-self:center;width:100%;
+            max-width:460px;margin:10px 0 16px}
+  #branches .blabel{text-align:center;color:var(--muted);font-size:12px;margin-bottom:2px}
+  #branches button{width:100%;text-align:left;background:linear-gradient(180deg,#243047,#1a2235);
+       border:1px solid var(--gold);color:var(--gold);font-weight:800;font-size:14.5px;
+       padding:12px 16px;border-radius:11px;cursor:pointer;font-family:inherit}
+  #branches button:hover{background:#2a3550;color:#fff}
+  #branches button .cond{display:block;font-weight:600;font-size:11.5px;color:var(--muted);margin-top:2px}
+</style>
+</head>
+<body>
+  <div id="top"><h1>논리 루트 &mdash; 결착</h1></div>
+  <div id="stage">
+    <div id="log"></div>
+    <div id="branches">
+      <div class="blabel">기록해 온 최종 신용도에 맞는 결말을 선택하세요</div>
+    </div>
+    <div id="hint">▼ 클릭하여 계속</div>
+  </div>
+
+<script>
+/* ============================================================
+   대본 — 여기만 고치면 됩니다.
+   {n:"..."}            = 나레이션
+   {s:"미나토", t:"..."}  = 대사
+   {rules:"..."}        = 분기 안내 박스
+   분기 A/B/C 결말 내용은 BRANCH 객체에서 수정.
+   ============================================================ */
+const STORY = [
+ {s:"토키토", t:`아니, 그럴 리 없어!`},
+ {n:`……토키토는 당황하여 허둥대다 무릎을 꿇었다. 그는 양손으로 머리를 쥐어뜯으며 초점을 잃은 눈을 하고 있다. 미나토는 한층 더 그를 몰아붙인다.`},
+ {s:"미나토", t:`당신은 이능을 쓰지 않고도 범행을 저지를 수 있었어!`},
+ {s:"토키토", t:`거짓말이야, 거짓말. 나는 이능으로 복수했다고……`},
+ {n:`토키토는 꼬인 발음으로 중얼거린다.`},
+ {s:"미나토", t:`이능을 썼든 쓰지 않았든, 어느 쪽 추리든 간에…… 두 개로 갈라진 달을 닫을 수 있었던 인물은 당신 이외에는 존재하지 않아요!`},
+ {s:"미나토", t:`범행을 인정하고 어머니의 마음과 마주해 주세요! 당신과 어머니의 갈라진 관계를 되돌릴 수 있는 사람은 당신뿐이란 말이에요!`},
+ {rules:`게임 중에 기록해 온 최종 신용도에 따라 확인해야 할 결말이 바뀝니다.
+
+· 최종 신용도가 0 이하인 경우 → 분기 A
+· 최종 신용도가 1 이상인 경우 → 분기 B
+· 신용도가 한 번도 0 이하로 내려간 적이 없는 경우 → 분기 C`},
+];
+
+// 분기 결말 (내용 주시면 채웁니다)
+const BRANCH = {
+  A: [ {n:`(분기 A 결말 — 내용 준비 중입니다.)`} ],
+  B: [ {n:`(분기 B 결말 — 내용 준비 중입니다.)`} ],
+  C: [ {n:`(분기 C 결말 — 내용 준비 중입니다.)`} ],
+};
+
+/* ============================================================
+   엔진
+   ============================================================ */
+const SPK={
+  "미나토":{c:"var(--mina)",side:"L"},
+  "츠키시로":{c:"var(--tsuki)",side:"L"},
+  "토키토":{c:"var(--toki)",side:"R"},
+};
+function spk(n){ return SPK[n]||{c:"#b8c0cc",side:"C"}; }
+
+const log=document.getElementById('log');
+const stage=document.getElementById('stage');
+const hint=document.getElementById('hint');
+const branches=document.getElementById('branches');
+let i=0, done=false;
+
+function narr(text){
+  const d=document.createElement('div'); d.className='narr';
+  d.appendChild(document.createTextNode(text));
+  log.appendChild(d); log.scrollTop=log.scrollHeight;
+}
+function dlg(name,text){
+  const s=spk(name);
+  const row=document.createElement('div'); row.className='row '+s.side;
+  const b=document.createElement('div'); b.className='bubble'; b.style.borderColor=s.c;
+  const nm=document.createElement('div'); nm.className='name'; nm.style.color=s.c; nm.textContent=name;
+  const tx=document.createElement('div'); tx.className='txt'; tx.textContent=text;
+  b.appendChild(nm); b.appendChild(tx); row.appendChild(b);
+  log.appendChild(row); log.scrollTop=log.scrollHeight;
+}
+function rulesBox(text){
+  const d=document.createElement('div'); d.className='rules';
+  const t=document.createElement('span'); t.className='rtag'; t.textContent='📜 분기 안내';
+  d.appendChild(t); d.appendChild(document.createTextNode(text));
+  log.appendChild(d); log.scrollTop=log.scrollHeight;
+}
+function advance(){
+  if(done) return;
+  if(i>=STORY.length){ showBranches(); return; }
+  const step=STORY[i]; i++;
+  if(step.n!=null) narr(step.n);
+  else if(step.rules!=null) rulesBox(step.rules);
+  else dlg(step.s, step.t);
+}
+const BRANCH_META=[
+  {key:"A", label:"분기 A", cond:"최종 신용도 0 이하"},
+  {key:"B", label:"분기 B", cond:"최종 신용도 1 이상"},
+  {key:"C", label:"분기 C", cond:"한 번도 0 이하로 내려간 적 없음"},
+];
+function showBranches(){
+  done=true; hint.style.display='none';
+  BRANCH_META.forEach(m=>{
+    const btn=document.createElement('button');
+    const lab=document.createElement('span'); lab.textContent=m.label;
+    const cond=document.createElement('span'); cond.className='cond'; cond.textContent=m.cond;
+    btn.appendChild(lab); btn.appendChild(cond);
+    btn.addEventListener('click',e=>{ e.stopPropagation(); pickBranch(m.key); });
+    branches.appendChild(btn);
+  });
+  branches.style.display='flex';
+  branches.scrollIntoView({behavior:'smooth'});
+}
+function pickBranch(key){
+  branches.style.display='none';
+  done=false; i=STORY.length; // 분기 내용은 별도로 재생
+  const lines=BRANCH[key]||[];
+  // 선택한 분기 라인들을 차례로 표시 (클릭으로 진행)
+  branchQueue = lines.slice();
+  hint.style.display='';
+  playBranch();
+}
+let branchQueue=[];
+function playBranch(){
+  if(!branchQueue.length){ hint.style.display='none'; return; }
+  const step=branchQueue.shift();
+  if(step.n!=null) narr(step.n);
+  else if(step.rules!=null) rulesBox(step.rules);
+  else dlg(step.s, step.t);
+  if(!branchQueue.length) hint.style.display='none';
+}
+
+stage.addEventListener('click',e=>{
+  if(e.target.closest('button')) return;
+  if(branchQueue.length){ playBranch(); return; }
+  advance();
+});
+advance();
+</script>
+</body>
+</html>
