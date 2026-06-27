@@ -34,6 +34,8 @@
   .narr{align-self:stretch;padding:4px 6px 4px 16px;border-left:3px solid rgba(139,147,166,.5);
         color:#c6cdda;font-style:italic;line-height:1.75;font-size:15px;white-space:pre-wrap;
         animation:rise .22s ease}
+  .chat{align-self:stretch;font-size:13px;color:#8b93a6;line-height:1.55;padding:0 6px;
+        white-space:pre-wrap;animation:rise .16s ease}
 
   .bubble{position:relative;max-width:82%;background:var(--panel);border:1px solid var(--line);
           border-left:4px solid var(--line);border-radius:12px;padding:10px 14px;
@@ -97,7 +99,35 @@ const STORY = [
 
 // 분기 결말 (내용 주시면 채웁니다)
 const BRANCH = {
-  A: [ {n:`(분기 A 결말 — 내용 준비 중입니다.)`} ],
+  A: [
+    {n:`라이브의 채팅창이 화면 가득 흘러간다.`},
+    {chat:`──증거가 안 돼.`},
+    {chat:`──그냥 망상일 뿐.`},
+    {chat:`──토오리가 하는 말이 맞아.`},
+    {chat:`──『나가부츠』도 별거 아니었네.`},
+    {n:`분명히, 수만 명의 시청자들은 『나가부츠』의 탐정들에 대해 회의적인 시선을 보내고 있었다.`},
+    {n:`그 모습을 보고, 토키토는 마음속 깊이 유쾌한 듯 웃었다.`},
+    {n:`나는 아무 대답도 할 수 없었다. 그저…… 눈앞이 캄캄해졌다.`},
+    {n:`……며칠 후.`},
+    {n:`츠키시로 카구야가 습격당했다. 범인은 그 남자…… 토키토 센리였다.`},
+    {n:`그는 극장에서의 활동을 계기로, 스스로의 정의를 내걸고 범죄를 저지르고 있었다.`},
+    {n:`그 칼날 끝은 카구야 씨를 향했고…… 그가 휘두른 칼날은 그녀의 얼굴을 베었다.`},
+    {n:`그는 말했다.`},
+    {n:`「나의 이능은 누구도 막을 수 없어. 너희들의 논리로는 말이지.」`},
+    {n:`카구야 씨는 목숨은 건졌지만, 열상이 심해 후각을 잃었다.`},
+    {n:`그녀의 감각이 또 하나 사라져 버린 것이다.`},
+    {n:`그런데도 그녀는 한마디 비명도 지르지 않았다고 한다.`},
+    {n:`그저 달처럼 고요하게 서 있었다고 한다.`},
+    {n:`토오루 씨와 카쵸우 씨의 도움으로, 우리는 토키토를 붙잡는 데 성공했다.`},
+    {n:`하지만 카구야 씨의 상처는 두 번 다시 낫지 않는다.`},
+    {n:`만약 내가 그때 토키토를 막다른 곳까지 몰아넣었더라면…… 결말은 달랐을지도 모른다.`},
+    {n:`무섭고, 억울해서……`},
+    {s:"츠키시로", t:`그래도 당신은 『나가부츠』의 일원으로서 현실을 직시해야 합니다.`},
+    {s:"츠키시로", t:`……그로부터 사건은 가속화되고 있습니다.`},
+    {s:"츠키시로", t:`토키토의 행동에 이능력자들이 차례차례 법을 넘어서기 시작했습니다.`},
+    {s:"츠키시로", t:`그것에 대처할 수 있는 것도 우리 이능력자들과 고통을 아는 자들뿐입니다.`},
+    {s:"츠키시로", t:`괜찮아요, 실패를 겪은 당신이라면…… 다음번엔 분명 잘 해낼 수 있을 거예요.`},
+  ],
   B: [ {n:`(분기 B 결말 — 내용 준비 중입니다.)`} ],
   C: [ {n:`(분기 C 결말 — 내용 준비 중입니다.)`} ],
 };
@@ -123,6 +153,17 @@ function narr(text){
   d.appendChild(document.createTextNode(text));
   log.appendChild(d); log.scrollTop=log.scrollHeight;
 }
+function chatLine(text){
+  const d=document.createElement('div'); d.className='chat';
+  d.appendChild(document.createTextNode(text));
+  log.appendChild(d); log.scrollTop=log.scrollHeight;
+}
+function renderStep(step){
+  if(step.n!=null) narr(step.n);
+  else if(step.chat!=null) chatLine(step.chat);
+  else if(step.rules!=null) rulesBox(step.rules);
+  else dlg(step.s, step.t);
+}
 function dlg(name,text){
   const s=spk(name);
   const row=document.createElement('div'); row.className='row '+s.side;
@@ -142,9 +183,7 @@ function advance(){
   if(done) return;
   if(i>=STORY.length){ showBranches(); return; }
   const step=STORY[i]; i++;
-  if(step.n!=null) narr(step.n);
-  else if(step.rules!=null) rulesBox(step.rules);
-  else dlg(step.s, step.t);
+  renderStep(step);
 }
 const BRANCH_META=[
   {key:"A", label:"분기 A", cond:"최종 신용도 0 이하"},
@@ -177,9 +216,7 @@ let branchQueue=[];
 function playBranch(){
   if(!branchQueue.length){ hint.style.display='none'; return; }
   const step=branchQueue.shift();
-  if(step.n!=null) narr(step.n);
-  else if(step.rules!=null) rulesBox(step.rules);
-  else dlg(step.s, step.t);
+  renderStep(step);
   if(!branchQueue.length) hint.style.display='none';
 }
 
